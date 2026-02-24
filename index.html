@@ -1,154 +1,531 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut, 
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, deleteUser
-} from 'firebase/auth';
-import { 
-  getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, 
-  addDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, where, getDocs 
-} from 'firebase/firestore';
-import { initializeApp } from 'firebase/app';
-import { 
-  Heart, Search, Settings, Home, Play, PlusSquare, MessageCircle, 
-  MoreVertical, Share2, User, LogOut, Trash2, ShieldCheck, CheckCircle2,
-  Camera, ArrowLeft, Send, X, ZoomIn, ZoomOut, Menu
-} from 'lucide-react';
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexsutra Global</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-// --- Firebase Configuration ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'nexsutra-global-app';
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Poppins;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:#fff}
 
-// --- Multi-Language Support ---
-const translations = {
-  en: {
-    welcome: "Welcome to Nexsutra Global",
-    login: "Sign In",
-    signup: "Join Now",
-    email: "Email Address",
-    password: "Password",
-    backupCode: "Backup Code",
-    backupNote: "Keep this code safe for life. You won't see it again!",
-    adminSecret: "Admin Activation Code (Optional)",
-    onboardingTitle: "Setup Your Profile",
-    username: "Username",
-    fullName: "Full Name",
-    bio: "Bio",
-    save: "Save & Continue",
-    terms: "I accept the Terms and Conditions governed by Google Firebase Policy.",
-    discover: "Discover People",
-    followers: "Followers",
-    following: "Following",
-    settings: "Settings",
-    signOut: "Sign Out",
-    deleteAccount: "Delete Account",
-    reels: "Reels",
-    messages: "Messages",
-    adminPanel: "Admin Panel",
-    reports: "Reports",
-    verification: "Apply for Verification",
-    comingSoon: "Coming Soon",
-    languages: "Languages",
-    deletePost: "Delete Post",
-    reportPost: "Report Post",
-    removeByDev: "Remove by Developer"
-  },
-  bn: {
-    welcome: "নেক্সসুত্রা গ্লোবাল-এ স্বাগতম",
-    login: "সাইন ইন",
-    signup: "যোগ দিন",
-    email: "ইমেল ঠিকানা",
-    password: "পাসওয়ার্ড",
-    backupCode: "ব্যাকআপ কোড",
-    backupNote: "এই কোডটি সারাজীবনের জন্য মনে রাখুন। দ্বিতীয়বার এটি পাওয়া যাবে না!",
-    adminSecret: "এডমিন অ্যাক্টিভেশন কোড (ঐচ্ছিক)",
-    onboardingTitle: "আপনার প্রোফাইল সেটআপ করুন",
-    username: "ইউজারনেম",
-    fullName: "সম্পূর্ণ নাম",
-    bio: "বায়ো",
-    save: "সেভ করুন",
-    terms: "আমি গুগল ফায়ারবেস পলিসি অনুযায়ী শর্তাবলী মেনে নিচ্ছি।",
-    discover: "মানুষ খুঁজুন",
-    followers: "অনুসারী",
-    following: "অনুসরণ করছেন",
-    settings: "সেটিংস",
-    signOut: "সাইন আউট",
-    deleteAccount: "অ্যাকাউন্ট মুছুন",
-    reels: "রিলস",
-    messages: "মেসেজ",
-    adminPanel: "এডমিন প্যানেল",
-    reports: "রিপোর্ট",
-    verification: "ভেরিফিকেশনের জন্য আবেদন",
-    comingSoon: "শীঘ্রই আসছে",
-    languages: "ভাষা",
-    deletePost: "পোস্ট মুছুন",
-    reportPost: "রিপোর্ট করুন",
-    removeByDev: "ডেভেলপার দ্বারা রিমুভ"
-  },
-  hi: {
-    welcome: "नेक्ससूत्रा ग्लोबल में आपका स्वागत है",
-    login: "साइन इन",
-    signup: "अभी जुड़ें",
-    email: "ईमेल पता",
-    password: "पासवर्ड",
-    backupCode: "बैकअप कोड",
-    backupNote: "इस कोड को जीवन भर के लिए सुरक्षित रखें। आप इसे दोबारा नहीं देख पाएंगे!",
-    adminSecret: "एडमिन एक्टिवेशन कोड (वैकल्पिक)",
-    onboardingTitle: "अपना प्रोफाइल सेटअप करें",
-    username: "यूज़रनेम",
-    fullName: "पूरा नाम",
-    bio: "बायो",
-    save: "सहेजें और जारी रखें",
-    terms: "मैं गूगल फायरबेस नीति द्वारा शासित नियमों और शर्तों को स्वीकार करता हूं।",
-    discover: "लोगों को खोजें",
-    followers: "अनुयायी",
-    following: "अनुसरण कर रहे हैं",
-    settings: "सेटिंग्स",
-    signOut: "साइन आउट",
-    deleteAccount: "खाता हटाएं",
-    reels: "रील्स",
-    messages: "संदेश",
-    adminPanel: "एडमिन पैनल",
-    reports: "रिपोर्ट",
-    verification: "सत्यापन के लिए आवेदन करें",
-    comingSoon: "जल्द ही आ रहा है",
-    languages: "भाषाएं",
-    deletePost: "पोस्ट हटाएं",
-    reportPost: "रिपोर्ट पोस्ट",
-    removeByDev: "डेवलपर द्वारा हटाएं"
-  }
+.center{display:flex;align-items:center;justify-content:center;height:100vh}
+
+.loginCard{
+background:rgba(255,255,255,0.08);
+border:1px solid rgba(255,255,255,0.2);
+backdrop-filter:blur(14px);
+padding:40px;
+border-radius:18px;
+width:360px;
+text-align:center
+}
+
+.logoCircle{
+width:90px;
+height:90px;
+border-radius:50%;
+border:2px dashed rgba(255,255,255,0.7);
+margin:auto;
+margin-bottom:18px;
+overflow:hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:22px
+}
+
+.logoCircle img{width:100%;height:100%;object-fit:cover}
+
+button{
+width:100%;
+padding:13px;
+border:none;
+border-radius:10px;
+margin-top:12px;
+font-weight:600;
+font-size:14px;
+cursor:pointer
+}
+
+.googleBtn{background:#ffffff;color:#000}
+.devBtn{background:#000;color:#fff}
+
+.hidden{display:none}
+
+.topbar{
+position:fixed;
+top:0;
+left:0;
+right:0;
+height:60px;
+background:rgba(0,0,0,0.65);
+backdrop-filter:blur(10px);
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 18px;
+z-index:10
+}
+
+.topbar img{height:36px;border-radius:50%}
+
+.navRight span{
+margin-left:18px;
+cursor:pointer;
+font-weight:500
+}
+
+.feed{
+margin-top:70px;
+margin-bottom:70px;
+padding:14px;
+max-width:700px;
+margin-left:auto;
+margin-right:auto
+}
+
+.post{
+background:#ffffff;
+color:#000;
+border-radius:14px;
+padding:14px;
+margin-bottom:18px
+}
+
+.post img{width:100%;border-radius:10px}
+.post video{width:100%;border-radius:10px}
+
+.actions{
+margin-top:8px;
+display:flex;
+justify-content:space-between
+}
+
+.bottombar{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:60px;
+background:rgba(0,0,0,0.75);
+display:flex;
+justify-content:space-around;
+align-items:center;
+font-weight:500
+}
+
+.bottombar div{cursor:pointer}
+
+.settingsPanel{
+position:fixed;
+top:0;
+right:0;
+width:320px;
+height:100vh;
+background:#ffffff;
+color:#000;
+padding:20px;
+overflow:auto;
+transform:translateX(100%);
+transition:0.3s
+}
+
+.settingsPanel.active{transform:translateX(0)}
+
+.settingsPanel h3{margin-top:0}
+
+.settingsPanel button{
+background:#000;
+color:#fff
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="center">
+
+<div class="loginCard">
+
+<div class="logoCircle" id="logoHolder">◯</div>
+
+<h2>Nexsutra Global</h2>
+
+<button class="googleBtn" onclick="googleLogin()">Connect with Google</button>
+
+<button class="devBtn" onclick="developerLogin()">Only for Developer</button>
+
+</div>
+
+</div>
+
+
+<!-- MAIN APP -->
+<div id="app" class="hidden">
+
+<div class="topbar">
+
+<div id="topLogo">Nexsutra Global</div>
+
+<div class="navRight">
+<span onclick="openNotifications()">Notifications</span>
+<span onclick="openMessages()">Messages</span>
+<span onclick="toggleSettings()">Settings</span>
+</div>
+
+</div>
+
+
+<div id="feed" class="feed"></div>
+
+
+<div class="bottombar">
+<div onclick="loadFeed()">Home</div>
+<div onclick="loadReels()">Reels</div>
+<div onclick="createPost()">Create</div>
+<div onclick="openMessages()">Chat</div>
+</div>
+
+</div>
+
+
+<!-- SETTINGS PANEL -->
+<div id="settings" class="settingsPanel">
+
+<h3>Platform Settings</h3>
+
+<button onclick="uploadLogo()">Upload Platform Logo</button>
+
+<hr>
+
+<button onclick="logout()">Sign Out</button>
+
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+<script>
+
+const firebaseConfig={
+apiKey:"AIzaSyB9er3WgF62EjZAg_S0hcJaCFQBqCuLt9o",
+authDomain:"social-media-1-d0c48.firebaseapp.com",
+databaseURL:"https://social-media-1-d0c48-default-rtdb.firebaseio.com",
+projectId:"social-media-1-d0c48",
+storageBucket:"social-media-1-d0c48.firebasestorage.app",
+messagingSenderId:"743310344125",
+appId:"1:743310344125:web:9d02a587e607e1d95cdcd4"
 };
 
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
-  const [view, setView] = useState('home'); // home, reels, plus, messages, profile, settings, admin
-  const [lang, setLang] = useState('en');
-  const [loading, setLoading] = useState(true);
-  const [appLogo, setAppLogo] = useState(null);
+firebase.initializeApp(firebaseConfig);
 
-  const t = translations[lang];
+const auth=firebase.auth();
+const db=firebase.database();
+const storage=firebase.storage();
 
-  // --- Auth Effect ---
-  useEffect(() => {
-    const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        // We will manually trigger sign in from UI
-      }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      if (u) {
-        const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
-        }
-        setUser(u);
-      } else {
+let currentUser=null;
+
+
+/* GOOGLE LOGIN */
+function googleLogin(){
+
+const provider=new firebase.auth.GoogleAuthProvider();
+
+auth.signInWithPopup(provider).then(res=>{
+
+currentUser=res.user;
+
+createUserIfNew(res.user);
+
+openApp();
+
+}).catch(err=>{
+alert(err.message);
+});
+
+}
+
+
+/* DEVELOPER LOGIN */
+function developerLogin(){
+
+const email=prompt("Developer access key (email)");
+
+const password=prompt("Developer access key (password)");
+
+if(email==="আমি জানিনা" && password==="আমি সবকিছু জানি জয় রাধে কৃষ্ণ"){
+
+currentUser={uid:"developer",name:"Developer",developer:true};
+
+openApp();
+
+}else{
+
+alert("Invalid developer key");
+
+}
+
+}
+
+
+/* CREATE USER IF NEW */
+function createUserIfNew(user){
+
+const ref=db.ref("users/"+user.uid);
+
+ref.once("value",snap=>{
+
+if(!snap.exists()){
+
+ref.set({
+name:user.displayName||"User",
+email:user.email,
+bio:"",
+badge:"none"
+});
+
+}
+
+});
+
+}
+
+
+/* OPEN APP */
+function openApp(){
+
+login.classList.add("hidden");
+app.classList.remove("hidden");
+
+loadLogo();
+loadFeed();
+
+}
+
+
+/* LOGO */
+function loadLogo(){
+
+db.ref("platform/logo").once("value",snap=>{
+
+if(snap.exists()){
+
+const url=snap.val();
+
+logoHolder.innerHTML=`<img src='${url}'>`;
+
+topLogo.innerHTML=`<img src='${url}'>`;
+
+}
+
+});
+
+}
+
+
+function uploadLogo(){
+
+if(!currentUser.developer){
+alert("Only developer can upload logo");
+return;
+}
+
+const input=document.createElement("input");
+input.type="file";
+input.accept="image/*";
+
+input.onchange=e=>{
+
+const file=e.target.files[0];
+
+const ref=storage.ref("platform/logo");
+
+ref.put(file).then(()=>{
+
+ref.getDownloadURL().then(url=>{
+
+ db.ref("platform/logo").set(url);
+
+ loadLogo();
+
+});
+
+});
+
+};
+
+input.click();
+
+}
+
+
+/* CREATE POST */
+function createPost(){
+
+const caption=prompt("Write caption");
+
+const input=document.createElement("input");
+input.type="file";
+input.accept="image/*,video/*";
+
+input.onchange=e=>{
+
+const file=e.target.files[0];
+
+const id=Date.now();
+
+const ref=storage.ref("posts/"+id);
+
+ref.put(file).then(()=>{
+
+ref.getDownloadURL().then(url=>{
+
+const type=file.type.startsWith("video")?"reel":"post";
+
+const post={
+id:id,
+uid:currentUser.uid,
+user:currentUser.name||"User",
+caption:caption,
+url:url,
+type:type,
+likes:0
+};
+
+ db.ref("posts/"+id).set(post);
+
+});
+
+});
+
+};
+
+input.click();
+
+}
+
+
+/* FEED */
+function loadFeed(){
+
+feed.innerHTML="";
+
+ db.ref("posts").on("value",snap=>{
+
+feed.innerHTML="";
+
+snap.forEach(p=>{
+
+const post=p.val();
+
+let media="";
+
+if(post.type==="reel"){
+media=`<video src='${post.url}' controls></video>`;
+}else{
+media=`<img src='${post.url}'>`;
+}
+
+const div=document.createElement("div");
+
+div.className="post";
+
+div.innerHTML=`
+
+<b>${post.user}</b>
+
+<p>${post.caption}</p>
+
+${media}
+
+<div class="actions">
+
+<button onclick="likePost(${post.id})">Like ${post.likes}</button>
+
+</div>
+
+`;
+
+feed.appendChild(div);
+
+});
+
+});
+
+}
+
+
+/* REELS */
+function loadReels(){
+
+feed.innerHTML="";
+
+ db.ref("posts").once("value",snap=>{
+
+snap.forEach(p=>{
+
+const post=p.val();
+
+if(post.type==="reel"){
+
+const div=document.createElement("div");
+
+div.className="post";
+
+div.innerHTML=`<video src='${post.url}' controls></video><p>${post.caption}</p>`;
+
+feed.appendChild(div);
+
+}
+
+});
+
+});
+
+}
+
+
+/* LIKE */
+function likePost(id){
+
+ db.ref("posts/"+id+"/likes").transaction(l=> (l||0)+1);
+
+}
+
+
+/* SETTINGS */
+function toggleSettings(){
+settings.classList.toggle("active");
+}
+
+
+/* LOGOUT */
+function logout(){
+
+auth.signOut().then(()=>location.reload());
+
+}
+
+
+/* PLACEHOLDERS */
+function openMessages(){
+alert("Messaging module will appear here");
+}
+
+function openNotifications(){
+alert("Notification module will appear here");
+}
+
+</script>
+
+</body>
+</html>      } else {
         setUser(null);
         setUserData(null);
       }
