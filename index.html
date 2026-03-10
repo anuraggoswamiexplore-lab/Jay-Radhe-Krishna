@@ -1,1 +1,374 @@
-j
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JavaGoat - Social</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Theme Variables */
+            --bg-body: #f8fafc; 
+            --bg-nav: #eab308; /* Yellow tone */
+            --bg-card: #ffffff;
+            --accent-red: #ff0000; /* Bright Red */
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow-soft: 0 10px 30px rgba(0,0,0,0.06);
+            --radius-card: 20px;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            margin: 0; 
+            background-color: var(--bg-body);
+            color: var(--text-main); 
+            height: 100vh;
+            overflow: hidden;
+            font-size: 14.5px;
+        }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .gradient-text { 
+            background: linear-gradient(to right, var(--bg-nav), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700; 
+        }
+
+        /* --- AUTH SCREEN DESIGN (Ported from Request 1) --- */
+        #auth-view {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #fffbeb, #fef3c7);
+            padding: 20px;
+            z-index: 2000;
+            position: fixed;
+            inset: 0;
+        }
+        .auth-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .logo-text-lg {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--bg-nav), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        .auth-input-wrapper { margin-bottom: 1rem; text-align: left; }
+        .auth-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+        .auth-input:focus { border-color: var(--bg-nav); }
+        
+        .btn-primary {
+            background: var(--bg-nav);
+            color: #000;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 12px;
+            width: 100%;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn-primary:active { transform: scale(0.95); }
+        
+       .btn-google {
+    background: #db4437;  /* Standard Google Red */
+    border: none;         /* Remove the gray border */
+    color: white;         /* Make text white */
+    margin-top: 10px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 10px rgba(219, 68, 55, 0.3); /* Optional: Adds a nice red glow */
+}
+        .auth-note { font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; }
+
+        /* --- MAIN APP LAYOUT --- */
+        #app-container { height: 100%; display: flex; flex-direction: column; position: relative; }
+        .view { height: 100%; overflow-y: auto; padding-bottom: 85px; display: none; scroll-behavior: smooth; }
+        .view.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- NAVIGATION & BADGES --- */
+        .nav-dock { 
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; 
+            display: flex; justify-content: space-around; align-items: center; z-index: 1000; 
+            background: var(--bg-nav); 
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        .nav-item { 
+            color: rgba(255,255,255, 0.7); padding: 10px; transition: 0.3s; 
+            display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer;
+        }
+        .nav-item i { font-size: 22px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.1); } 
+        .nav-item.active i { transform: scale(1.1); text-shadow: 0 0 10px rgba(255,255,255,0.6); }
+
+        .nav-center-btn {
+            background: var(--accent-red);
+            width: 55px; height: 55px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transform: translateY(-20px); 
+            box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
+            border: 4px solid #fff; 
+            transition: transform 0.2s;
+        }
+        .nav-center-btn:active { transform: translateY(-15px) scale(0.95); }
+        .nav-center-btn i { font-size: 24px !important; color: white !important; }
+        
+        .badge { position: absolute; top: 4px; right: 4px; background-color: var(--accent-red); color: white; font-size: 10px; font-weight: bold; height: 16px; min-width: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid var(--bg-nav); }
+
+        /* --- COMPONENTS --- */
+        .header { 
+            padding: 12px 20px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 90; 
+            background: rgba(255, 255, 255, 0.98); 
+            border-bottom: 1px solid rgba(0,0,0,0.05); 
+        }
+
+        /* Stories */
+        .stories-wrapper { display: flex; gap: 12px; overflow-x: auto; padding: 15px 20px; scrollbar-width: none; background: #fff; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+        .story-card { width: 65px; height: 65px; border-radius: 50%; position: relative; overflow: hidden; border: 2px solid var(--bg-nav); padding: 2px; flex-shrink: 0; }
+        .story-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .story-card.add { background: #fff; border: 2px dashed var(--bg-nav); display: flex; align-items: center; justify-content: center; color: var(--bg-nav); }
+
+        /* Posts */
+        .post-card { 
+            margin: 10px 10px 25px 10px; 
+            padding: 0; border-radius: var(--radius-card); 
+            box-shadow: var(--shadow-soft); background: white; 
+            overflow: hidden; border: 1px solid rgba(0,0,0,0.03);
+        }
+        .post-header { display: flex; align-items: center; gap: 12px; padding: 12px; }
+        .p-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
+        .post-img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+        .post-actions { display: flex; gap: 18px; padding: 12px 15px 5px 15px; }
+        .action-btn { font-size: 24px; color: var(--text-main); cursor: pointer; transition: transform 0.2s; }
+        .action-btn.liked { color: var(--accent-red); }
+        .caption-area { padding: 5px 15px 12px 15px; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; }
+        .caption-area b { color: var(--text-main); margin-right: 6px; font-weight: 600; }
+
+        /* Follow Button */
+        .btn-follow { 
+            padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 15px; 
+            border: none; cursor: pointer; margin-left: auto; transition: 0.2s; 
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-follow.not-following { background: var(--accent-red); color: white; box-shadow: 0 4px 10px rgba(255, 0, 0, 0.3); }
+        .btn-follow.following { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
+
+        /* Comments */
+        .comment-section { padding: 0 15px 15px 15px; }
+        .comment-toggle { font-size: 13px; color: #94a3b8; cursor: pointer; margin-bottom: 8px; display: inline-block; font-weight: 500; }
+        .comment-item { font-size: 13px; margin-bottom: 4px; color: var(--text-muted); }
+        .comment-input-box { display: flex; gap: 8px; margin-top: 8px; }
+        .comment-input-box input { flex: 1; border: none; background: #f1f5f9; padding: 10px 15px; border-radius: 20px; font-size: 13px; outline: none; }
+        .comment-input-box button { border: none; background: transparent; color: var(--bg-nav); font-weight: 600; cursor: pointer; font-size: 13px; }
+
+        /* Upload */
+        .upload-area { margin: 15px; height: 300px; border: 2px dashed #cbd5e1; border-radius: 25px; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; position: relative; overflow: hidden; background: #f8fafc; transition: 0.3s; }
+        .upload-area:active { background: #f1f5f9; border-color: var(--bg-nav); }
+        .upload-preview { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
+        textarea { width: 100%; background: #fff; border: 2px solid #e2e8f0; padding: 15px; color: #333; border-radius: 15px; resize: none; margin-bottom: 15px; font-size: 14.5px; font-family: 'Poppins'; }
+        textarea:focus { border-color: var(--bg-nav); outline: none; }
+        
+        /* Main Button reused in app */
+        .btn-main { width: 100%; padding: 14px; border: none; border-radius: 14px; background: var(--bg-nav); color: white; font-weight: 600; cursor: pointer; transition: transform 0.2s; font-size: 15px; margin-top: 15px; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4); }
+
+        /* Chat */
+        .chat-list-container { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .chat-list-item { padding: 12px; display: flex; align-items: center; gap: 12px; border-radius: 15px; cursor: pointer; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s; }
+        .chat-window { position: fixed; inset: 0; z-index: 2100; background: var(--bg-body); display: flex; flex-direction: column; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #fff; }
+        .bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; font-size: 14px; position: relative; line-height: 1.4; }
+        .bubble.mine { align-self: flex-end; background: var(--bg-nav); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(234, 179, 8, 0.3); }
+        .bubble.theirs { align-self: flex-start; background: #f1f5f9; color: #333; border-bottom-left-radius: 4px; }
+        .chat-input-bar { padding: 12px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
+
+        /* Profile */
+        .profile-head { padding: 30px 20px; text-align: center; background: #fff; margin-bottom: 15px; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; box-shadow: var(--shadow-soft); }
+        .p-big-img { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; object-fit: cover; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .stats-row { display: flex; justify-content: center; gap: 30px; margin: 20px 0; }
+        .stat-num { font-size: 18px; font-weight: 700; color: var(--text-main); display: block; }
+        .stat-label { font-size: 12px; color: var(--text-muted); }
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: #fff; padding-top: 2px; }
+        .grid-item { aspect-ratio: 1; width: 100%; object-fit: cover; cursor: pointer; }
+        .logout-btn { position: absolute; top: 20px; right: 20px; color: var(--accent-red); cursor: pointer; font-size: 22px; }
+        .btn-sec { background: transparent; border: 2px solid var(--bg-nav); color: var(--bg-nav); box-shadow: none; }
+
+        /* Notif */
+        .notif-row { padding: 15px 20px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #f1f5f9; background: #fff; }
+        .notif-icon { width: 40px; height: 40px; border-radius: 50%; background: #fffbeb; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+        /* Loader */
+        .loader { width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.2); border-radius: 50%; border-top-color: #000; animation: spin 1s ease-in-out infinite; display: none; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="auth-view">
+        <div class="auth-card">
+            <div class="logo-text-lg">JavaGoat</div>
+            <p style="color:#666; margin-bottom:20px;">Connect & Bleat.</p>
+            
+            <div class="auth-input-wrapper">
+                <input type="email" id="email" class="auth-input" placeholder="Email Address">
+            </div>
+            <div class="auth-input-wrapper">
+                <input type="password" id="password" class="auth-input" placeholder="Password">
+            </div>
+            
+            <button class="btn-primary" onclick="handleAuth()">
+                <span id="auth-text">Login / Join</span>
+                <div id="auth-loader" class="loader"></div>
+            </button>
+            <p id="error-msg" style="color: #ef4444; font-size: 13px; margin: 10px 0; min-height:18px;"></p>
+            
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin:15px 0;">
+                <hr style="flex:1; border:0; border-top:1px solid #ddd;">
+                <span style="color:#aaa; font-size:0.8rem;">OR</span>
+                <hr style="flex:1; border:0; border-top:1px solid #ddd;">
+            </div>
+
+            <button class="btn-google" onclick="handleGoogle()">
+                <i class="fab fa-google"></i> Continue with Google
+            </button>
+            
+            <p class="auth-note">
+                Enter your credentials. If you don't have an account, we'll create one for you automatically!
+            </p>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden">
+        
+        <div id="view-home" class="view active">
+            <div class="header">
+                <span class="gradient-text" style="font-size: 20px; letter-spacing: -0.5px;">JavaGoat</span>
+                <i class="far fa-paper-plane" style="font-size: 20px; color: #333; cursor: pointer;" onclick="nav('view-chat')"></i>
+            </div>
+            
+            <div class="stories-wrapper" id="stories-container">
+                <div class="story-card add" onclick="document.getElementById('story-file').click()">
+                    <i class="fas fa-plus" style="font-size: 20px;"></i>
+                </div>
+            </div>
+
+            <div id="feed-container"></div>
+        </div>
+
+        <div id="view-chat" class="view">
+            <div class="header">
+                <span style="font-size: 18px; font-weight: 700; color:#333">Messages</span>
+            </div>
+            <div id="chat-list" class="chat-list-container">
+                </div>
+        </div>
+
+        <div id="view-upload" class="view">
+            <div class="header">
+                <span style="font-size: 18px; font-weight: 700; color:#333">New Post</span>
+            </div>
+            <div style="padding: 20px;">
+                <div class="upload-area" onclick="document.getElementById('post-file').click()">
+                    <img id="upload-preview-img" class="upload-preview">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 40px; color: #cbd5e1; margin-bottom: 10px;"></i>
+                    <span style="color: #94a3b8; font-weight: 500; font-size: 14px;">Tap to upload image</span>
+                </div>
+                <textarea id="post-caption" rows="3" placeholder="Write a caption..."></textarea>
+                <button class="btn-main" onclick="uploadPost()">
+                    <span id="post-btn-text">Publish Post</span>
+                    <div id="post-loader" class="loader" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></div>
+                </button>
+            </div>
+        </div>
+
+        <div id="view-notif" class="view">
+            <div class="header">
+                <span style="font-size: 18px; font-weight: 700; color:#333">Activity</span>
+            </div>
+            <div id="notif-list"></div>
+        </div>
+
+        <div id="view-profile" class="view">
+            <i class="fas fa-sign-out-alt logout-btn" onclick="handleLogout()" title="Logout"></i>
+            <div class="profile-head">
+                <img id="profile-img" src="" class="p-big-img" onclick="document.getElementById('profile-file').click()">
+                <h2 id="profile-name" style="margin: 0; font-size: 22px; color: #1a1a1a;">Loading...</h2>
+                <button class="btn-sec" style="margin-top: 12px; width: auto; padding: 6px 18px; border-radius: 20px; font-size: 12px; font-weight: 600;" onclick="toggleEditName()">Edit Profile</button>
+                <input id="edit-name-input" class="auth-input hidden" style="margin-top: 15px; text-align: center;">
+
+                <div class="stats-row">
+                    <div class="stat-box"><span class="stat-num" id="stat-posts">0</span><span class="stat-label">Posts</span></div>
+                    <div class="stat-box"><span class="stat-num" id="stat-followers">0</span><span class="stat-label">Followers</span></div>
+                    <div class="stat-box"><span class="stat-num" id="stat-following">0</span><span class="stat-label">Following</span></div>
+                </div>
+            </div>
+            <div class="grid-container" id="profile-grid"></div>
+        </div>
+
+        <div class="nav-dock">
+            <div class="nav-item active" onclick="nav('view-home')">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="nav-item" onclick="nav('view-chat')">
+                <i class="fas fa-comment-dots"></i>
+                <span id="badge-chat" class="badge hidden">0</span>
+            </div>
+            <div class="nav-item" onclick="nav('view-upload')" style="overflow: visible;">
+                <div class="nav-center-btn">
+                    <i class="fas fa-plus"></i>
+                </div>
+            </div>
+            <div class="nav-item" onclick="nav('view-notif')">
+                <i class="fas fa-heart"></i>
+                <span id="badge-notif" class="badge hidden">0</span>
+            </div>
+            <div class="nav-item" onclick="nav('view-profile')">
+                <i class="fas fa-user"></i>
+            </div>
+        </div>
+
+        <div id="chat-overlay" class="chat-window hidden">
+            <div class="header" style="background: #fff; border-bottom: 1px solid #eee;">
+                <i class="fas fa-arrow-left" onclick="closeChat()" style="font-size: 22px; cursor: pointer; color:#333;"></i>
+                <span id="chat-title" style="font-size: 18px; font-weight: 600; co
